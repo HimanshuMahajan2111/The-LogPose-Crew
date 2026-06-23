@@ -1282,7 +1282,68 @@ elif page == "🗺️ Zone Maps":
 
         with mtabs[2]:
             st.caption("Night patrol (10PM-6AM) vs daytime enforcement split.")
-            embed_map(MAP_DIR / "03_night_vs_day.html")
+
+            nd_choice = st.radio(
+                "View",
+                ["🌙 Night (10PM–6AM)", "☀️ Day (6AM–10PM)", "⚖️ Side-by-side"],
+                horizontal=True,
+                label_visibility="collapsed",
+                key="nd_toggle",
+            )
+
+            if "latitude" in dff.columns and "hour" in dff.columns:
+                night_mask = (dff["hour"] >= 22) | (dff["hour"] < 6)
+                night_df = dff[night_mask].dropna(subset=["latitude","longitude"])
+                day_df   = dff[~night_mask].dropna(subset=["latitude","longitude"])
+
+                _map_cfg = dict(
+                    lat="latitude", lon="longitude",
+                    zoom=11, center={"lat": 12.9716, "lon": 77.5946},
+                    map_style=T["mapstyle"], height=600,
+                )
+
+                if nd_choice.startswith("🌙"):
+                    samp = night_df.sample(min(6000, len(night_df)), random_state=42)
+                    fig = px.scatter_map(samp, **_map_cfg,
+                                         hover_data={"police_station": True, "vehicle_category": True},
+                                         title=f"🌙 Night Violations — {len(night_df):,} records")
+                    fig.update_traces(marker=dict(color="#4cc9f0", size=5, opacity=0.7))
+                    fig.update_layout(paper_bgcolor=T["bg"], font_color=T["text"],
+                                      margin=dict(l=0,r=0,t=36,b=0), title_font_size=13)
+                    st.plotly_chart(fig, use_container_width=True)
+
+                elif nd_choice.startswith("☀️"):
+                    samp = day_df.sample(min(6000, len(day_df)), random_state=42)
+                    fig = px.scatter_map(samp, **_map_cfg,
+                                         hover_data={"police_station": True, "vehicle_category": True},
+                                         title=f"☀️ Day Violations — {len(day_df):,} records")
+                    fig.update_traces(marker=dict(color="#f4a261", size=5, opacity=0.7))
+                    fig.update_layout(paper_bgcolor=T["bg"], font_color=T["text"],
+                                      margin=dict(l=0,r=0,t=36,b=0), title_font_size=13)
+                    st.plotly_chart(fig, use_container_width=True)
+
+                else:
+                    c_night, c_day = st.columns(2)
+                    with c_night:
+                        samp = night_df.sample(min(3000, len(night_df)), random_state=42)
+                        fig = px.scatter_map(samp, **{**_map_cfg, "height": 480},
+                                              hover_data={"police_station": True},
+                                              title=f"🌙 Night — {len(night_df):,}")
+                        fig.update_traces(marker=dict(color="#4cc9f0", size=5, opacity=0.7))
+                        fig.update_layout(paper_bgcolor=T["bg"], font_color=T["text"],
+                                          margin=dict(l=0,r=0,t=36,b=0), title_font_size=13)
+                        st.plotly_chart(fig, use_container_width=True)
+                    with c_day:
+                        samp = day_df.sample(min(3000, len(day_df)), random_state=42)
+                        fig = px.scatter_map(samp, **{**_map_cfg, "height": 480},
+                                              hover_data={"police_station": True},
+                                              title=f"☀️ Day — {len(day_df):,}")
+                        fig.update_traces(marker=dict(color="#f4a261", size=5, opacity=0.7))
+                        fig.update_layout(paper_bgcolor=T["bg"], font_color=T["text"],
+                                          margin=dict(l=0,r=0,t=36,b=0), title_font_size=13)
+                        st.plotly_chart(fig, use_container_width=True)
+            else:
+                embed_map(MAP_DIR / "03_night_vs_day.html")
 
         with mtabs[3]:
             st.caption("Violations color-coded by severity (green=low → red=critical).")
