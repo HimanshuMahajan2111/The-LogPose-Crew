@@ -1,4 +1,4 @@
-# 🧭 The LogPose Crew - Parking-Induced Congestion Intelligence System
+# 🧭 The LogPose Crew: Parking-Induced Congestion Intelligence System
 
 > *"Always pointing to the next hotspot."*
 
